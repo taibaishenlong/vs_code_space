@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <link rel="stylesheet" href="../lib/bootstrap.css" />
+  <script src="../lib/jquery.js"></script>
+</head>
+
+<body style="padding: 15px;">
+  <!-- 添加图书的Panel面板 -->
+  <div class="panel panel-primary">
+    <div class="panel-heading">
+      <h3 class="panel-title">添加新图书</h3>
+    </div>
+    <div class="panel-body form-inline">
+
+      <div class="input-group">
+        <div class="input-group-addon">书名</div>
+        <input type="text" class="form-control" id="iptBookname" placeholder="请输入书名">
+      </div>
+
+      <div class="input-group">
+        <div class="input-group-addon">作者</div>
+        <input type="text" class="form-control" id="iptAuthor" placeholder="请输入作者">
+      </div>
+
+      <div class="input-group">
+        <div class="input-group-addon">出版社</div>
+        <input type="text" class="form-control" id="iptPublisher" placeholder="请输入出版社">
+      </div>
+
+      <button id="btnAdd" class="btn btn-primary">添加</button>
+
+    </div>
+  </div>
+
+
+  <!-- 图书的表格 -->
+  <table class="table table-bordered table-hover">
+    <thead>
+      <tr>
+        <th>Id</th>
+        <th>书名</th>
+        <th>作者</th>
+        <th>出版社</th>
+        <th>操作</th>
+      </tr>
+
+    </thead>
+    <tbody id="tb"></tbody>
+  </table>
+
+  <script>
+    // 1. 定义一个函数 `getBooklist`
+    // 2. 发送ajax请求 $.get $.ajax
+    // 3. 需要看看服务器响应数据 status 状态码 是不是等于200 如果不是 就应该提示用户
+    // 4. 定义一个空数组
+    // 5. 遍历数组 拼接字符串 `模板字符串`
+    // 6. 将数组转换为字符串 写入到tbody
+    // 7. 调用`getBooklist`函数
+    function getBooklist() {
+      $.get('http://www.liulongbin.top:3006/api/getbooks', (res) => {
+        // console.log(res);
+        const {
+          status,
+          msg,
+          data
+        } = res;
+        if (status !== 200) return alert(msg);
+        let arr = [];
+        data.forEach(item => {
+          arr.push(`<tr>
+        <td>${item.id}</td>
+        <td>${item.bookname}</td>
+        <td>${item.author}</td>
+        <td>${item.publisher}</td>
+        <td> <a href="javascript:;" class="del" data-id="${item.id}">删除</a></td>
+      </tr>`);
+        });
+        $('#tb').html(arr.join(''));
+      });
+    };
+    getBooklist();
+
+    // 添加图书功能
+    // 1. 找到添加按钮注册点击事件
+    //   2. 获取到图书名称、作者、出版社三个输入框里面的value值
+    //   3. 判断是否填写了相关的内容，如果没有填写就应该提示用户
+    //   4. 将数据通过ajax发送请求发给服务器
+    //   5. 接受服务器响应回来的数据 判断是否添加失败 如果失败就提示用户
+    //   6. 调用 `getBooklist`就可以了
+    //   7. 清空输入框里面的数据
+    $('#btnAdd').on('click', function () {
+      const bookname = $('#iptBookname').val().trim();
+      const author = $('#iptAuthor').val().trim();
+      const publisher = $('#iptPublisher').val().trim();
+      if (bookname.length === 0 || author.length === 0 || publisher.length === 0) return alert('请输入相关内容');
+      $.post('http://www.liulongbin.top:3006/api/addbook', {
+        bookname: bookname,
+        author: author,
+        publisher: publisher
+      }, (res) => {
+        if (res.status !== 201) return alert(msg);
+        getBooklist();
+        $('#iptBookname').val('');
+        $('#iptAuthor').val('');
+        $('#iptPublisher').val('');
+      })
+    });
+    // 删除功能
+    //1. 给删除按钮注册点击事件 需要采用事件委托来注册 委托 `tbody`
+    //    - 需要给删除按钮 设置 class属性  在getBooklist函数里面添加
+    //    - 给每一个a标签添加一个自定义属性 方便获取id 在getBooklist函数里面添加
+
+    // 2. 需要提示用户   `window.confirm()`
+    // 3. 获取id 
+    // 4. 发送ajax给服务器
+    // 5. 接受服务器响应回来的数据 判断是否删除成功 如果删除失败就应该提示用户
+    // 6. 调用 `getBooklist`就可以了
+    $('tbody').on('click', '.del', function () {
+      if (window.confirm('你真的要删除吗?')) {
+        let id = $(this).attr('data-id')
+        $.get('http://www.liulongbin.top:3006/api/delbook', {
+          id
+        }, (res) => {
+          const {
+            status,
+            msg
+          } = res;
+          if (status !== 200) return alert(msg);
+          getBooklist();
+        })
+      }
+    })
+  </script>
+
+</body>
+
+</html>
